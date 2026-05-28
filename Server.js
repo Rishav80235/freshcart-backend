@@ -46,15 +46,33 @@ const Orders = require("./model/Order");
 // USER ROUTES
 // ==========================================
 
+// check admin exists ----------
+app.get("/check-admin", async (req, res) => {
+  try {
+    const adminExists = await Users.findOne({ role: "admin" });
+    res.json({ status: true, exists: !!adminExists });
+  } catch (error) {
+    res.json({ status: false, message: "An error occurred" });
+  }
+});
+
 // signup ------------
 app.post("/signup", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
+
+    if (role === "admin") {
+      const adminExists = await Users.findOne({ role: "admin" });
+      if (adminExists) {
+        return res.json({ status: false, message: "Admin account already exists. Only one admin is allowed." });
+      }
+    }
+
     const existingUser = await Users.findOne({ email });
     if (existingUser) {
       return res.json({ status: false, message: "User already exists" });
     }
-    const newUser = await Users.create({ email, password });
+    const newUser = await Users.create({ email, password, role: role || "user" });
     res.json({ status: true, user: newUser });
   } catch (error) {
     res.json({ status: false, message: "An error occurred" });
