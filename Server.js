@@ -926,6 +926,102 @@ app.post("/removecategory", async (req, res) => {
   }
 });
 
+// ==========================================
+// RAZORPAY PAYMENT ROUTES
+// ==========================================
+
+// Load environment variables
+require("dotenv").config();
+const Razorpay = require("razorpay");
+const crypto = require("crypto");
+
+// Initialize Razorpay instance
+const razorpayInstance = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
+
+// Create Order
+app.post("/api/create-order", async (req, res) => {
+  try {
+    const { amount, currency = "INR", receipt } = req.body;
+
+    // Validate amount (minimum 100 paise = 1 INR)
+    if (!amount || amount < 100) {
+      return res.status(400).json({
+        status: false,
+        message: "Amount must be at least 100 paise (₹1)",
+      });
+    }
+
+    const options = {
+      amount: Math.round(amount), // Amount in paise
+      currency: currency,
+      receipt: receipt || `receipt_${Date.now()}`,
+    };
+
+    const order = await razorpayInstance.orders.create(options);
+
+    res.status(201).json({
+      status: true,
+      order_id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      receipt: order.receipt,
+    });
+  } catch (error) {
+    console.error("Razorpay Order Error:", error);
+    res.status(500).json({
+      status: false,
+      message: "Failed to create order",
+      error: error.message,
+    });
+  }
+});
+
+// Verify Payment Signature
+app.post("/api/verify-payment", async (req, res) => {
+  try {
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } =
+      req.body;
+
+    // Validate all required fields
+    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+      return res.status(400).json({
+        status: false,
+        message: "Missing payment verification details",
+      });
+    }
+
+    // Generate signature for verification
+    const generatedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
+
+    // Compare signatures
+    if (generatedSignature === razorpay_signature) {
+      res.status(200).json({
+        status: true,
+        message: "Payment verified successfully",
+        payment_id: razorpay_payment_id,
+        order_id: razorpay_order_id,
+      });
+    } else {
+      res.status(400).json({
+        status: false,
+        message: "Payment verification failed - Signature mismatch",
+      });
+    }
+  } catch (error) {
+    console.error("Payment Verification Error:", error);
+    res.status(500).json({
+      status: false,
+      message: "Payment verification error",
+      error: error.message,
+    });
+  }
+});
 
 app.listen(8080, () => {
   console.log("Server started on port 8080");
