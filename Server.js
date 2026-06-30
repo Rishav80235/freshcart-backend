@@ -18,7 +18,7 @@ app.use(bodyParser.urlencoded({ limit: "10mb", extended: true }));
 const { default: mongoose } = require("mongoose");
 
 // Use environment variable for MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://Rishav:jTrqWILG4hXu2BVB@cluster0.hwjgx.mongodb.net/native";
+const MONGODB_URI = process.env.MONGODB_URI || "MONGODB_URI";
 
 mongoose.connect(MONGODB_URI).then(() => {
   console.log("mongodb connected");
