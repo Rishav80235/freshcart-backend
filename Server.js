@@ -1,6 +1,10 @@
 //===================================
 //     Server
 //===================================
+
+// Load environment variables FIRST - before any other requires
+require("dotenv").config();
+
 const express = require("express");
 const app = express();
 
@@ -12,8 +16,14 @@ app.use(bodyParser.json({ limit: "10mb" }));
 app.use(bodyParser.urlencoded({ limit: "10mb", extended: true }));
 
 const { default: mongoose } = require("mongoose");
-mongoose.connect("mongodb+srv://Rishav:jTrqWILG4hXu2BVB@cluster0.hwjgx.mongodb.net/native").then(() => {
+
+// Use environment variable for MongoDB connection
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://Rishav:jTrqWILG4hXu2BVB@cluster0.hwjgx.mongodb.net/native";
+
+mongoose.connect(MONGODB_URI).then(() => {
   console.log("mongodb connected");
+}).catch((err) => {
+  console.error("MongoDB connection error:", err.message);
 });
 
 // Import schemas
@@ -930,8 +940,7 @@ app.post("/removecategory", async (req, res) => {
 // RAZORPAY PAYMENT ROUTES
 // ==========================================
 
-// Load environment variables
-require("dotenv").config();
+// Note: dotenv already loaded at top of file
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 
@@ -1023,10 +1032,16 @@ app.post("/api/verify-payment", async (req, res) => {
   }
 });
 
-app.listen(8080, () => {
-  console.log("Server started on port 8080");
-});
+// Export app for Vercel serverless function
+module.exports = app;
 
+// Also listen locally for development
+const PORT = process.env.PORT || 8080;
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log("Server started on port", PORT);
+  });
+}
 
 app.get("/",(req,res)=>{
   res.json({
