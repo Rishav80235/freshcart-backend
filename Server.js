@@ -1062,4 +1062,12 @@ app.post("/api/verify-payment", async (req, res) => {
 // Export app for Vercel serverless function
 module.exports = app;
 
+// Also listen locally for development
+const PORT = process.env.PORT || 8080;
+// In local/dev we MUST always start the server, regardless of NODE_ENV.
+// Hosting/serverless can still import/export `app` (module.exports), but
+// running with `node Server.js` should always bind a port.
+app.listen(PORT, () => {
+  console.log("Server started on port", PORT);
+});
 
