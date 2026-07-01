@@ -18,23 +18,30 @@ const allowedOrigins = [
 app.use(cors({ origin: allowedOrigins }));
 
 // Also handle preflight OPTIONS requests for all routes
-app.options('*', cors({ origin: allowedOrigins }));
+// Disable broken catch-all OPTIONS route on Express v5; CORS preflight handled by app.use(cors(...))
+// app.options('*', cors({ origin: allowedOrigins }));
 
 
-const bodyParser = require("body-parser");
-app.use(bodyParser.json({ limit: "10mb" }));
-app.use(bodyParser.urlencoded({ limit: "10mb", extended: true }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 const { default: mongoose } = require("mongoose");
 
 // Use environment variable for MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI || "MONGODB_URI";
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  console.error("Missing required env var: MONGODB_URI. Server will not start.");
+} else {
+  mongoose
+    .connect(MONGODB_URI)
+    .then(() => {
+      console.log("mongodb connected");
+    })
+    .catch((err) => {
+      console.error("MongoDB connection error:", err.message);
+    });
+}
 
-mongoose.connect(MONGODB_URI).then(() => {
-  console.log("mongodb connected");
-}).catch((err) => {
-  console.error("MongoDB connection error:", err.message);
-});
 
 // Import schemas
 const Users = require("./model/Users");
@@ -1057,8 +1064,10 @@ module.exports = app;
 
 // Also listen locally for development
 const PORT = process.env.PORT || 8080;
-if (process.env.NODE_ENV !== "production") {
-  app.listen(PORT, () => {
-    console.log("Server started on port", PORT);
-  });
-}
+// In local/dev we MUST always start the server, regardless of NODE_ENV.
+// Hosting/serverless can still import/export `app` (module.exports), but
+// running with `node Server.js` should always bind a port.
+app.listen(PORT, () => {
+  console.log("Server started on port", PORT);
+});
+

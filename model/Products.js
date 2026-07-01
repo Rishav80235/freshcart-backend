@@ -3,7 +3,7 @@
 //===================================
 const { default: mongoose } = require("mongoose");
 
-const userSchema = new mongoose.Schema({
+const productSchema = new mongoose.Schema({
     title:String,
     weight:Number,
     category:String,
@@ -22,4 +22,4 @@ const userSchema = new mongoose.Schema({
     status:String
 });
 
-module.exports = mongoose.model('Products', userSchema);
+module.exports = mongoose.model('Products', productSchema);
