@@ -9,7 +9,17 @@ const express = require("express");
 const app = express();
 
 const cors = require("cors");
-app.use(cors());
+
+const allowedOrigins = [
+  'http://localhost:8081', // Expo Web dev
+  /https:\/\/.*\.vercel\.app$/, // Allow any vercel deployment previews
+];
+
+app.use(cors({ origin: allowedOrigins }));
+
+// Also handle preflight OPTIONS requests for all routes
+app.options('*', cors({ origin: allowedOrigins }));
+
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.json({ limit: "10mb" }));
