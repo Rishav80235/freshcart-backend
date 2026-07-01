@@ -51,6 +51,16 @@ mongoose.connection.once("open", async () => {
 });
 const Orders = require("./model/Order");
 
+// Handle favicon.ico requests to prevent 500 errors on Vercel
+app.get('/favicon.ico', (req, res) => res.status(204).send());
+
+// Root/health-check route
+app.get("/",(req,res)=>{
+  res.json({
+    status:true
+  })
+})
+
 
 // ==========================================
 // USER ROUTES
@@ -1042,9 +1052,3 @@ if (process.env.NODE_ENV !== "production") {
     console.log("Server started on port", PORT);
   });
 }
-
-app.get("/",(req,res)=>{
-  res.json({
-    status:true
-  })
-})
